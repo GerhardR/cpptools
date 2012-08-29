@@ -76,6 +76,16 @@ std::istream & operator>>( std::istream & in, std::vector<T, A> & v ){
     return in;
 }
 
+template <typename T1, typename T2>
+std::ostream & operator<<( std::ostream & out, const std::pair<T1, T2> & p ){
+    return out << p.first << " " << p.second;
+}
+
+template <typename T1, typename T2>
+std::istream & operator>>( std::istream & in, std::pair<T1, T2> & p ){
+    return in >> p.first >> p.second;
+}
+
 /**
 @}
 */
@@ -97,6 +107,9 @@ options::make(param, "p");
 
 ofstream log;               // an ofstream that opens a file given with -l
 options::make(log, "l");
+
+vector<int> ints;           // you can even read in a whole vector with
+options::make(ints, "v");   // -v "100 200 300"
 
 options::print();           // prints the current table of known options
 cout << endl;
