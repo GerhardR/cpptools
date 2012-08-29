@@ -187,17 +187,21 @@ struct typed_option<std::string> : public option {
 template <>
 struct typed_option<std::ofstream> : public option {
     std::ofstream & val;
+    std::string name;
     typed_option( std::ofstream & v ) : val(v) {}
     
     bool parse() { return true; };
-    void parse( const std::string & opt ){
-        val.open(opt.c_str());
+    void parse( const std::string & opt ){ 
+        name = opt; 
+        if(opt != "") {
+            if(val.is_open())
+                val.close();
+            val.open(opt.c_str());
+        }
     }
 
-    std::string type() const {
-        return typeid(val).name();
-    }
-    std::string value() const { return "file"; }
+    std::string type() const { return typeid(val).name(); }
+    std::string value() const { return name; }
 };
 
 /**
@@ -235,6 +239,60 @@ static inline int parse( const int argc, char ** argv ){
             break;
     }
     return i;
+}
+
+/** 
+reads option name - value pairs from a generic input stream.
+\ingroup options
+*/
+static inline void read( std::istream & in ){
+    std::string line;
+    std::istringstream line_in;
+    std::string opt;
+
+    while(in.good()){
+        getline(in, line);
+        line_in.clear();
+        line_in.str(line);
+        if(!(line_in >> opt))
+            continue;
+        std::map<std::string, option *>::const_iterator flag = store<>::flags.find(opt);
+        if( flag != store<>::flags.end()){
+            if(flag->second->parse()){
+                line_in.get();
+                getline(line_in, line);
+                flag->second->parse(line);
+            }
+        }
+    }
+}
+
+/** 
+open a config file and read option name - value pairs from it.
+\ingroup options
+*/
+static inline void read( const std::string & name ){
+    std::ifstream in(name.c_str());
+    read(in);
+}
+
+/** 
+writes name - value pairs to a generic output stream.
+\ingroup options
+*/
+static inline void save( std::ostream & out ){
+    for(std::map<std::string, option *>::const_iterator flag = store<>::flags.begin(); flag != store<>::flags.end(); ++flag){
+        out << flag->first << "\t" << flag->second->value() << "\n";
+    }    
+}
+
+/** 
+opens a config file and writes name - value pairs to it. 
+\ingroup options
+*/
+static inline void save( const std::string & name ){
+    std::ofstream out(name.c_str());
+    save(out);
 }
 
 /**
