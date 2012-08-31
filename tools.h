@@ -108,13 +108,16 @@ options::make(param, "p");
 ofstream log;               // an ofstream that opens a file given with -l
 options::make(log, "l");
 
+ifstream input;             // an ifstream to read input data from with -i
+options::make(input, "i");
+
 vector<int> ints;           // you can even read in a whole vector with
 options::make(ints, "v");   // -v "100 200 300"
 
 options::print();           // prints the current table of known options
 cout << endl;
 
-options::parse(argc, argv); // parse the input options
+options::parse(argc, argv); // parse the input options and update the variables
 
 // now the values are set in the variables defined above and can be used 
 // in the program as usuall.
@@ -189,6 +192,26 @@ struct typed_option<std::ofstream> : public option {
     std::ofstream & val;
     std::string name;
     typed_option( std::ofstream & v ) : val(v) {}
+    
+    bool parse() { return true; };
+    void parse( const std::string & opt ){ 
+        name = opt; 
+        if(opt != "") {
+            if(val.is_open())
+                val.close();
+            val.open(opt.c_str());
+        }
+    }
+
+    std::string type() const { return typeid(val).name(); }
+    std::string value() const { return name; }
+};
+
+template <>
+struct typed_option<std::ifstream> : public option {
+    std::ifstream & val;
+    std::string name;
+    typed_option( std::ifstream & v ) : val(v) {}
     
     bool parse() { return true; };
     void parse( const std::string & opt ){ 
